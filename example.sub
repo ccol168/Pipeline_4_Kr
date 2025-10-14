@@ -1,0 +1,10 @@
+universe = vanilla 
+executable = /storage/gpfs_data/juno/junofs/users/ccoletta/Pipeline_4_Kr/sh/rtraw2rec_command.sh 
+log = /storage/gpfs_data/juno/junofs/users/ccoletta/Pipeline_4_Kr/log/test.log 
+output = /storage/gpfs_data/juno/junofs/users/ccoletta/Pipeline_4_Kr/out/test.out 
+error = /storage/gpfs_data/juno/junofs/users/ccoletta/Pipeline_4_Kr/err/test.err 
++MaxRuntime = 86400 
+ShouldTransferFiles = YES 
+WhenToTransferOutput = ON_EXIT 
++SingularityImage = false 
+queue 1 

@@ -1,0 +1,8 @@
+steps-algorithms:
+  CD-LPMT-WF: none
+  CD-LPMT-TQ: fpgatq2calibtq
+  CD-SPMT-TQ: none
+  WP-LPMT-WF: none
+  WP-LPMT-TQ: wpelectq2calibtq
+  CD-MPMT-WF: none
+  TT: none
