@@ -35,6 +35,7 @@ class Read_calib : public AlgBase {
 		float total_npe, my_total_npe, TimeSinceLastMuon = -1;
 		std::vector<int> PMTID;
 		std::vector<double> charge ,time, corr_time, first_hittime, sub_hittime;
+		std::vector<uint64_t> elec_time,elec_charge;
 		TString trigger_type; //, wptrigger_type;
 		float CdRecox, CdRecoy, CdRecoz, CdRecoenergy, PEBi, PEPo;
 		float Interface_level;

@@ -7,6 +7,8 @@
 #include "SniperKernel/AlgFactory.h"
 #include "SniperKernel/SniperLog.h"
 #include "Event/SimHeader.h"
+#include "Event/CdLpmtElecHeader.h"
+#include "Event/CdLpmtElecEvt.h"
 #include "Event/CdLpmtCalibHeader.h"
 #include "Event/CdLpmtCalibEvt.h"
 #include "Event/CdTriggerHeader.h"
@@ -83,6 +85,8 @@ bool Read_calib::initialize() {
 	events->Branch("PMTID",&PMTID);
 	events->Branch("FirstHitTime",&first_hittime);
 	events->Branch("SubtractedTime",&sub_hittime);
+	events->Branch("ElecTime",&elec_time);
+	events->Branch("ElecCharge",&elec_charge);
 
     return true;
 }
@@ -93,6 +97,7 @@ bool Read_calib::execute() {
 	LogInfo << "executing: " << m_iEvt++ << std::endl;
 
 	JM::CdLpmtCalibEvt* calibevent = 0;
+	JM::CdLpmtElecEvt* elecevent = 0;
 
 	auto nav = m_buf->curEvt();
 
@@ -103,12 +108,15 @@ bool Read_calib::execute() {
 	auto calibheader = JM::getHeaderObject<JM::CdLpmtCalibHeader>(nav,"/Event/CdLpmtCalib_FPGA");
 	if (calibheader) calibevent = (JM::CdLpmtCalibEvt*)calibheader->event();
 
-	if (!calibevent) {
-		LogInfo << "No CalibEvt found, skipping..." << std::endl;
+	auto elecheader = JM::getHeaderObject<JM::CdLpmtElecHeader>(nav,"/Event/CdLpmtElec_FPGA");
+	if (elecheader) elecevent = (JM::CdLpmtElecEvt*)elecheader->event();
+
+	if (!calibevent || !elecevent) {
+		LogInfo << "No CalibEvt or ElecEvt found, skipping..." << std::endl;
 		return true;
 	}
 
-	if (calibevent) { //&& recoevent) {
+	if (calibevent && elecevent) {
 	
 		charge.clear();
 		time.clear();
@@ -136,6 +144,23 @@ bool Read_calib::execute() {
 
 			first_hittime.push_back(element->firstHitTime());
 
+		}
+
+		elec_charge.clear();
+		elec_time.clear();
+
+		for (const auto& kv : elecevent->channelData()) {
+			// kv is std::pair<const int, JM::ElecChannel*>
+			JM::ElecChannel* ch = kv.second;
+			if (!ch) continue;
+			// push all times
+			for (const auto& t : ch->time()) {
+				elec_time.push_back(t);
+			}
+			// push all charges
+			for (const auto& q : ch->charge()) {
+				elec_charge.push_back(q);
+			}
 		}
 
 		events->Fill();
