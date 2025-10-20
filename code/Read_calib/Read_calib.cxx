@@ -1,0 +1,153 @@
+#define SNIPER_VERSION_2 1
+#include "Read_calib.h"
+#include "Identifier/IDService.h"
+#include "BufferMemMgr/IDataMemMgr.h"
+#include "EvtNavigator/NavBuffer.h"
+#include "EvtNavigator/EvtNavHelper.h"
+#include "SniperKernel/AlgFactory.h"
+#include "SniperKernel/SniperLog.h"
+#include "Event/SimHeader.h"
+#include "Event/CdLpmtCalibHeader.h"
+#include "Event/CdLpmtCalibEvt.h"
+#include "Event/CdTriggerHeader.h"
+#include "Event/CdTriggerEvt.h"
+#include "Event/WpCalibHeader.h"
+#include "Event/WpCalibEvt.h"
+#include "Event/WpTriggerHeader.h"
+#include "Event/WpTriggerEvt.h"
+#include "Event/CdVertexRecHeader.h"
+#include "Event/CdVertexRecEvt.h"
+#include "RootWriter/RootWriter.h"
+#include "Event/OecHeader.h"
+#include "Event/OecEvt.h"
+#include <numeric>
+#include <TSpectrum.h>
+#include <TFile.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <limits>
+#include <cmath>
+#include <TGraph.h>
+
+#include "TH1F.h"
+#include "TTree.h"
+#include "TParameter.h"
+
+int BinsNumber = 200;
+
+DECLARE_ALGORITHM(Read_calib);
+
+Read_calib::Read_calib(const std::string& name) 
+	: AlgBase(name),
+	  m_iEvt(0),
+	  m_buf(0)
+{
+}
+
+// Provide an out-of-line destructor so the vtable/type-info are emitted here.
+Read_calib::~Read_calib() {}
+
+bool Read_calib::initialize() {
+
+    LogDebug << "initializing" << std::endl;
+    auto toptask = getRoot();
+
+    idServ = IDService::getIdServ();
+    idServ->init();
+	
+    SniperDataPtr<JM::NavBuffer> navBuf(getParent(), "/Event");
+
+    if ( navBuf.invalid() ) {
+        LogError << "cannot get the NavBuffer @ /Event" << std::endl;
+        return false;
+    }
+	
+    m_buf = navBuf.data();
+
+    SniperPtr<RootWriter> rw(getParent(), "RootWriter");
+    if (rw.invalid()) {
+        LogError << "Can't Locate RootWriter. If you want to use it, please "
+                 << "enable it in your job option file."
+                 << std::endl;
+         return false;
+    }
+
+    //wp_events_seen = 0;    
+    events = rw->bookTree(*m_par,"tree/CdEvents","Events Tree");
+    events->Branch("EvtID",&cdEvtID,"EvtID/I");
+    events->Branch("TimeStamp",&timestamp);
+    events->Branch("Time",&time);
+    events->Branch("Charge",&charge);
+	events->Branch("PMTID",&PMTID);
+	events->Branch("FirstHitTime",&first_hittime);
+	events->Branch("SubtractedTime",&sub_hittime);
+
+    return true;
+}
+
+bool Read_calib::execute() {
+
+	LogInfo << "=====================================" << std::endl;
+	LogInfo << "executing: " << m_iEvt++ << std::endl;
+
+	JM::CdLpmtCalibEvt* calibevent = 0;
+
+	auto nav = m_buf->curEvt();
+
+	if (m_iEvt == 1) {
+		LogDebug << "FirstTimeStamp = " << (nav->TimeStamp()).AsString() << endl;
+	}
+
+	auto calibheader = JM::getHeaderObject<JM::CdLpmtCalibHeader>(nav,"/Event/CdLpmtCalib_FPGA");
+	if (calibheader) calibevent = (JM::CdLpmtCalibEvt*)calibheader->event();
+
+	if (!calibevent) {
+		LogInfo << "No CalibEvt found, skipping..." << std::endl;
+		return true;
+	}
+
+	if (calibevent) { //&& recoevent) {
+	
+		charge.clear();
+		time.clear();
+		PMTID.clear();
+		first_hittime.clear();
+		sub_hittime.clear();
+
+		for (const auto& element : calibevent->calibPMTCol()) {
+	
+			for (auto pmtChannel : element -> charge() ) {
+				charge.push_back(pmtChannel);
+				int PmtNo = idServ->id2CopyNo(Identifier(element->pmtId()));
+				PMTID.push_back(PmtNo);
+			}
+			bool FirstFlag = false;
+			double FirstTime;
+			for (auto pmtChannel : element -> time() ) {
+				if (FirstFlag == false) {
+					FirstTime = pmtChannel;
+					FirstFlag = true;
+				}
+				time.push_back(pmtChannel);
+				sub_hittime.push_back(pmtChannel-FirstTime);
+			}
+
+			first_hittime.push_back(element->firstHitTime());
+
+		}
+
+		events->Fill();
+		cdEvtID++;
+
+	}
+
+	return true;
+}
+
+bool Read_calib::finalize() {
+
+    return true;
+    
+}

@@ -3,5 +3,11 @@
 /sh
 /analysis
 /c_launch
+/log
+/err
+/out
 *.root
 *.x
+*.d
+*.so
+*.pcm
