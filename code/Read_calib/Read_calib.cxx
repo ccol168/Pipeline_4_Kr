@@ -159,7 +159,7 @@ bool Read_calib::execute() {
 
 		else {
 			TimeSinceLastMuon = static_cast<long double>((timestamp.GetSec() - LastMuon.GetSec()) * 1e9 ) + 
-								static_cast<long double>(timestamp.GetNanoSec() - LastMuon.GetNanoSec);
+								static_cast<long double>(timestamp.GetNanoSec() - LastMuon.GetNanoSec());
 		}
 
 		NHits = 0;
@@ -182,7 +182,7 @@ bool Read_calib::execute() {
 		}
 
 		TriggerType = (triggerevent -> triggerType())[0];
-		TriggerTime = triggerevent -> triggerTime();
+		TriggerTime.Set((triggerevent -> triggerTime()).GetSec(), (triggerevent -> triggerTime()).GetNanoSec()) ;
 
 		events->Fill();
 		cdEvtID++;
