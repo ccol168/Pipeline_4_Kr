@@ -14,3 +14,4 @@
 *.sub
 /.vscode
 /launch_python
+/list_rtraw

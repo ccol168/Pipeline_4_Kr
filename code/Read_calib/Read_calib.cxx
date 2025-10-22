@@ -94,7 +94,7 @@ bool Read_calib::initialize() {
 	events->Branch("NPE",&NPE);
 	events->Branch("NHits",&NHits);
 	events->Branch("OECRecoX",&OECRecoX);
-	events->Branch("OECRecoy",&OECRecoY);
+	events->Branch("OECRecoY",&OECRecoY);
 	events->Branch("OECRecoZ",&OECRecoZ);
 	events->Branch("TriggerType",&TriggerType);
 
