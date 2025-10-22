@@ -4,6 +4,7 @@
 #include "SniperKernel/AlgBase.h"
 #include "EvtNavigator/NavBuffer.h"
 #include "Identifier/IDService.h"
+#include "OECTagSvc/OECTagSvc.h"
 #include <fstream>
 #include <map>
 #include <vector>
@@ -28,28 +29,28 @@ class Read_calib : public AlgBase {
 
         int m_iEvt, NPeaks; // To count the loops
         JM::NavBuffer* m_buf; // Our buffer with the events
+		OECTagSvc* m_tagsvc;
+
 		int cdEvtID = 0;        
 		// Define variables that are globally used
 		IDService* idServ;
-		TTimeStamp timestamp, last_muon_timestamp;
-		float total_npe, my_total_npe, TimeSinceLastMuon = -1;
-		std::vector<int> PMTID;
-		std::vector<double> charge ,time, corr_time, first_hittime, sub_hittime, raw_time;
-		std::vector<uint64_t> elec_time,elec_charge;
-		TString trigger_type; //, wptrigger_type;
-		float CdRecox, CdRecoy, CdRecoz, CdRecoenergy, PEBi, PEPo;
-		float Interface_level;
+		TTimeStamp timestamp, TriggerTime;
+
+		TTimeStamp LastMuon;
+
+		TTimeStamp FirstTimeStamp, LastTimeStamp;
+
+		double DeadTime = 0., TimeSinceLastMuon;
+
+		std::vector<float> time, charge
+		std::vector <int> PMTID;
+		std::string TriggerType;
+
+		float NPE, OECRecoX, OECRecoY, OECRecoZ, LiveTime;
+		int OECMuonTag, NHits;
 
 		TTree* events ;
-		TTree* summaryTree ;
-		int nMuonsTotal = 0;
-		double runLength = 0.0;
-		TTimeStamp minEventTimestamp, maxEventTimestamp;
-		std::vector<double> KernelVector;
-		TSpectrum spectrum;
-
-		int nMuons = 0; // Counter for detected muons
-
+		TTree* runinfo;
 };
 
 #endif

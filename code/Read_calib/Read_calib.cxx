@@ -13,12 +13,6 @@
 #include "Event/CdLpmtCalibEvt.h"
 #include "Event/CdTriggerHeader.h"
 #include "Event/CdTriggerEvt.h"
-#include "Event/WpCalibHeader.h"
-#include "Event/WpCalibEvt.h"
-#include "Event/WpTriggerHeader.h"
-#include "Event/WpTriggerEvt.h"
-#include "Event/CdVertexRecHeader.h"
-#include "Event/CdVertexRecEvt.h"
 #include "RootWriter/RootWriter.h"
 #include "Event/OecHeader.h"
 #include "Event/OecEvt.h"
@@ -68,6 +62,13 @@ bool Read_calib::initialize() {
 	
     m_buf = navBuf.data();
 
+	SniperPtr<OECTagSvc> tagsvc(getParent(),"OECTagSvc");
+    if( tagsvc.invalid()) {
+        LogError << "Unable to locate tagsvc" << std::endl;
+        return false;
+    }
+    m_tagsvc = tagsvc.data();
+
     SniperPtr<RootWriter> rw(getParent(), "RootWriter");
     if (rw.invalid()) {
         LogError << "Can't Locate RootWriter. If you want to use it, please "
@@ -83,11 +84,18 @@ bool Read_calib::initialize() {
     events->Branch("Time",&time);
     events->Branch("Charge",&charge);
 	events->Branch("PMTID",&PMTID);
-	events->Branch("FirstHitTime",&first_hittime);
-	events->Branch("SubtractedTime",&sub_hittime);
-	events->Branch("ElecTime",&elec_time);
-	events->Branch("ElecCharge",&elec_charge);
-	events->Branch("RawTime",&raw_time);
+	events->Branch("OECMuonTag",&OECMuonTag);
+	events->Branch("TimeSinceLastMuon",&TimeSinceLastMuon);
+	events->Branch("NPE",&NPE);
+	events->Branch("NHits",&NHits);
+	events->Branch("OECRecoX",&OECRecoX);
+	events->Branch("OECRecoy",&OECRecoY);
+	events->Branch("OECRecoZ",&OECRecoZ);
+	events->Branch("TriggerType",&TriggerType);
+	events->Branch("TriggerTime",&TriggerTime);
+
+	runinfo = rw->bookTree(*m_par,"tree/RunInfo","Run-level informations");
+	runinfo -> Branch("LiveTime",&LiveTime);
 
     return true;
 }
@@ -95,100 +103,96 @@ bool Read_calib::initialize() {
 bool Read_calib::execute() {
 
 	LogInfo << "=====================================" << std::endl;
-	LogInfo << "executing: " << m_iEvt++ << std::endl;
+	LogInfo << "executing: " << m_iEvt << std::endl;
 
 	JM::CdLpmtCalibEvt* calibevent = 0;
-	JM::CdLpmtElecEvt* elecevent = 0;
-        JM::CdLpmtCalibEvt* rawcalibevent = 0;
+	JM::OecEvt* oecevent = 0;
+	JM::CdTriggerEvt* triggerevent = 0; 
 
 	auto nav = m_buf->curEvt();
 
-	if (m_iEvt == 1) {
+	if (m_iEvt == 0) {
+		FirstTimeStamp = nav -> TimeStamp();
+		LastTimeStamp = nav -> TimeStamp();
 		LogDebug << "FirstTimeStamp = " << (nav->TimeStamp()).AsString() << endl;
 	}
+
+	if ( std::abs(nav -> TimeStamp().GetSec() - LastTimeStamp.GetSec()) > 30.  ) {
+		LogInfo << "############# LONG DEAD TIME DETECTED! ##################" << std::endl;
+		LogInfo << "Estimated value = " << std::abs(nav -> TimeStamp().GetSec() - LastTimeStamp.GetSec()) << " s" << std::endl;
+		DeadTime += std::abs(nav -> TimeStamp().GetSec() - LastTimeStamp.GetSec());
+	}
+
+	LastTimeStamp = nav -> TimeStamp();
 
 	auto calibheader = JM::getHeaderObject<JM::CdLpmtCalibHeader>(nav,"/Event/CdLpmtCalib_FPGA");
 	if (calibheader) calibevent = (JM::CdLpmtCalibEvt*)calibheader->event();
 
-	auto rawcalibheader = JM::getHeaderObject<JM::CdLpmtCalibHeader>(nav,"/Event/CdLpmtCalib_FPGARaw");
-        if (rawcalibheader) rawcalibevent = (JM::CdLpmtCalibEvt*)rawcalibheader->event();
+	auto oecheader = JM::getHeaderObject<JM::OecHeader>(nav,"/Event/Oec");
+        if (oecheader) oecevent = (JM::OecEvt*)oecheader->event();
 
-	auto elecheader = JM::getHeaderObject<JM::CdLpmtElecHeader>(nav,"/Event/CdLpmtElec_FPGA");
-	if (elecheader) elecevent = (JM::CdLpmtElecEvt*)elecheader->event();
+	auto triggerheader = JM::getHeaderObject<JM::CdTriggerHeader>(nav,"/Event/CdTrigger");
+	if (triggerheader) triggerevent = (JM::CdTriggerEvt*)triggerheader->event();
 
-	if (!calibevent || !elecevent || !rawcalibevent) {
-		LogInfo << "No CalibEvt or ElecEvt found, skipping..." << std::endl;
+	if (!calibevent || !triggerevent || !oecevent) {
+		LogInfo << "No CalibEvt, OecEvt or TriggerEvt found, skipping..." << std::endl;
 		return true;
 	}
 
-	if (rawcalibevent && calibevent && elecevent) {
+	if (calibevent && triggerevent && oecevent) {
 	
 		charge.clear();
 		time.clear();
 		PMTID.clear();
-		first_hittime.clear();
-		sub_hittime.clear();
-		raw_time.clear();
 
+		timestamp = LastTimeStamp;
+		OECMuonTag = m_tagsvc -> isMuon(oecevent);
+
+		if (OECMuonTag == 1) {
+			LastMuon = timestamp;
+			TimeSinceLastMuon = 0.;
+		}
+
+		else {
+			TimeSinceLastMuon = static_cast<long double>((timestamp.GetSec() - LastMuon.GetSec()) * 1e9 ) + 
+								static_cast<long double>(timestamp.GetNanoSec() - LastMuon.GetNanoSec);
+		}
+
+		NHits = 0;
+		NPE = 0;
 		for (const auto& element : calibevent->calibPMTCol()) {
+
+			NPE += element -> nPE();
 	
 			for (auto pmtChannel : element -> charge() ) {
 				charge.push_back(pmtChannel);
 				int PmtNo = idServ->id2CopyNo(Identifier(element->pmtId()));
 				PMTID.push_back(PmtNo);
 			}
-			bool FirstFlag = false;
-			double FirstTime;
+
 			for (auto pmtChannel : element -> time() ) {
-				if (FirstFlag == false) {
-					FirstTime = pmtChannel;
-					FirstFlag = true;
-				}
 				time.push_back(pmtChannel);
-				sub_hittime.push_back(pmtChannel-FirstTime);
+				NHits++;
 			}
-
-			first_hittime.push_back(element->firstHitTime());
 
 		}
 
-		for (const auto& element : rawcalibevent->calibPMTCol()) {
-
-                        for (auto pmtChannel : element -> time() ) {
-                                raw_time.push_back(pmtChannel);
-                                int PmtNo = idServ->id2CopyNo(Identifier(element->pmtId()));
-                                PMTID.push_back(PmtNo);
-                        }
-
-                }
-
-
-		elec_charge.clear();
-		elec_time.clear();
-
-		for (const auto& kv : elecevent->channelData()) {
-			// kv is std::pair<const int, JM::ElecChannel*>
-			JM::ElecChannel* ch = kv.second;
-			if (!ch) continue;
-			// push all times
-			for (const auto& t : ch->time()) {
-				elec_time.push_back(t);
-			}
-			// push all charges
-			for (const auto& q : ch->charge()) {
-				elec_charge.push_back(q);
-			}
-		}
+		TriggerType = oecevent -> triggerType -> at(0);
+		TriggerTime = oecevent -> triggerTime();
 
 		events->Fill();
 		cdEvtID++;
 
 	}
 
+	m_iEvt++;
 	return true;
 }
 
 bool Read_calib::finalize() {
+
+	LiveTime = LastTimeStamp.GetSec() - FirstTimeStamp.GetSec() - DeadTime;
+	runinfo -> Fill();
 
     return true;
     
