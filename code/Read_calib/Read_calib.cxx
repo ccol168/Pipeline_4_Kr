@@ -181,8 +181,8 @@ bool Read_calib::execute() {
 
 		}
 
-		TriggerType = (oecevent -> triggerType)-> at(0);
-		TriggerTime = oecevent -> triggerTime();
+		TriggerType = (triggerevent -> triggerType())[0];
+		TriggerTime = triggerevent -> triggerTime();
 
 		events->Fill();
 		cdEvtID++;
