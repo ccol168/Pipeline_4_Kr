@@ -25,6 +25,12 @@ alg = task.createAlg("Read_calib")
 import BufferMemMgr
 bufMgr = task.createSvc("BufferMemMgr")
 
+File="/cvmfs/juno.ihep.ac.cn/el9_amd64_gcc11/Release/Jlatest/junosw/OEC/OECTutorial/share/DummyCommonConfig_1000t.json"
+import OECComJSONSvc
+oeccomjsonsvc = task.createSvc('OECComJSONSvc')
+oeccomjsonsvc.property("OECReadComJSONFrom").set(0)
+oeccomjsonsvc.property("OECComJSONFile").set(File)
+
 import OECTagSvc
 oectagsvc = task.createSvc('OECTagSvc')
 
