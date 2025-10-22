@@ -37,7 +37,7 @@ def generate_list_files(run_list_file, version_dir, list_dir):
 
         for i in range(0, len(files), FILES_PER_LIST):
             chunk = files[i:i+FILES_PER_LIST]
-            index = (i // FILES_PER_LIST) + 1
+            index = (i // FILES_PER_LIST)
             out_filename = list_dir / f"list_rtraw_RUN{run}_{index:03d}.list"
             with open(out_filename, "w") as out:
                 for f in chunk:
