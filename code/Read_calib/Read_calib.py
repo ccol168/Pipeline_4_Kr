@@ -25,6 +25,9 @@ alg = task.createAlg("Read_calib")
 import BufferMemMgr
 bufMgr = task.createSvc("BufferMemMgr")
 
+import OECTagSvc
+oectagsvc = task.createSvc('OECTagSvc')
+
 import RootWriter
 task.property("svcs").append("RootWriter")
 rw = task.find("RootWriter")
