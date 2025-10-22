@@ -121,7 +121,7 @@ def write_sub_file(sh_file, run, idx, script_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate JUNO RTRAW .list, .sh, .sub, and master submit script.")
-    parser.add_argument("--version", type=str, default="J25.6.0", help="Software version (default J25.6.0)")
+    parser.add_argument("--version", type=str, default="J25.5.0", help="Software version (default J25.5.0)")
     parser.add_argument("--runlist", type=str, required=True, help="Text file with run numbers")
     args = parser.parse_args()
 
