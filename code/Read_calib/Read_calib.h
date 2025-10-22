@@ -42,7 +42,7 @@ class Read_calib : public AlgBase {
 
 		double DeadTime = 0., TimeSinceLastMuon;
 
-		std::vector<float> time, charge
+		std::vector<float> time, charge;
 		std::vector <int> PMTID;
 		std::string TriggerType;
 

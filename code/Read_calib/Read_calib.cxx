@@ -129,7 +129,7 @@ bool Read_calib::execute() {
 	if (calibheader) calibevent = (JM::CdLpmtCalibEvt*)calibheader->event();
 
 	auto oecheader = JM::getHeaderObject<JM::OecHeader>(nav,"/Event/Oec");
-        if (oecheader) oecevent = (JM::OecEvt*)oecheader->event();
+        if (oecheader) oecevent = (JM::OecEvt*)oecheader->event("JM::OecEvt");
 
 	auto triggerheader = JM::getHeaderObject<JM::CdTriggerHeader>(nav,"/Event/CdTrigger");
 	if (triggerheader) triggerevent = (JM::CdTriggerEvt*)triggerheader->event();
@@ -147,6 +147,10 @@ bool Read_calib::execute() {
 
 		timestamp = LastTimeStamp;
 		OECMuonTag = m_tagsvc -> isMuon(oecevent);
+
+		OECRecoX = oecevent -> getVertexX();
+		OECRecoY = oecevent -> getVertexY();
+		OECRecoZ = oecevent -> getVertexZ();
 
 		if (OECMuonTag == 1) {
 			LastMuon = timestamp;
@@ -177,7 +181,7 @@ bool Read_calib::execute() {
 
 		}
 
-		TriggerType = oecevent -> triggerType -> at(0);
+		TriggerType = (oecevent -> triggerType)-> at(0);
 		TriggerTime = oecevent -> triggerTime();
 
 		events->Fill();
