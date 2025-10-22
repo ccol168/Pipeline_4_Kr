@@ -45,9 +45,9 @@ def main():
         run = int(run_str)
 
         # Compute intermediate directories
-        dir_lvl1 = f"{run // 10000:08d}"  # e.g., 00010000
-        dir_lvl2 = f"{run // 100:08d}"    # e.g., 00010500
-
+        dir_lvl1 = f"{(run // 10000) * 10000:08d}"  
+        dir_lvl2 = f"{(run // 100) * 100:08d}"     
+        
         # Construct full path
         run_dir = version_dir / "global_trigger" / dir_lvl1 / dir_lvl2 / f"{run:05d}"
 
