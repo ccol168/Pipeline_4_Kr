@@ -87,6 +87,7 @@ bool Read_calib::initialize() {
 	events->Branch("SubtractedTime",&sub_hittime);
 	events->Branch("ElecTime",&elec_time);
 	events->Branch("ElecCharge",&elec_charge);
+	events->Branch("RawTime",&raw_time);
 
     return true;
 }
@@ -98,6 +99,7 @@ bool Read_calib::execute() {
 
 	JM::CdLpmtCalibEvt* calibevent = 0;
 	JM::CdLpmtElecEvt* elecevent = 0;
+        JM::CdLpmtCalibEvt* rawcalibevent = 0;
 
 	auto nav = m_buf->curEvt();
 
@@ -108,21 +110,25 @@ bool Read_calib::execute() {
 	auto calibheader = JM::getHeaderObject<JM::CdLpmtCalibHeader>(nav,"/Event/CdLpmtCalib_FPGA");
 	if (calibheader) calibevent = (JM::CdLpmtCalibEvt*)calibheader->event();
 
+	auto rawcalibheader = JM::getHeaderObject<JM::CdLpmtCalibHeader>(nav,"/Event/CdLpmtCalib_FPGARaw");
+        if (rawcalibheader) rawcalibevent = (JM::CdLpmtCalibEvt*)rawcalibheader->event();
+
 	auto elecheader = JM::getHeaderObject<JM::CdLpmtElecHeader>(nav,"/Event/CdLpmtElec_FPGA");
 	if (elecheader) elecevent = (JM::CdLpmtElecEvt*)elecheader->event();
 
-	if (!calibevent || !elecevent) {
+	if (!calibevent || !elecevent || !rawcalibevent) {
 		LogInfo << "No CalibEvt or ElecEvt found, skipping..." << std::endl;
 		return true;
 	}
 
-	if (calibevent && elecevent) {
+	if (rawcalibevent && calibevent && elecevent) {
 	
 		charge.clear();
 		time.clear();
 		PMTID.clear();
 		first_hittime.clear();
 		sub_hittime.clear();
+		raw_time.clear();
 
 		for (const auto& element : calibevent->calibPMTCol()) {
 	
@@ -145,6 +151,17 @@ bool Read_calib::execute() {
 			first_hittime.push_back(element->firstHitTime());
 
 		}
+
+		for (const auto& element : rawcalibevent->calibPMTCol()) {
+
+                        for (auto pmtChannel : element -> time() ) {
+                                raw_time.push_back(pmtChannel);
+                                int PmtNo = idServ->id2CopyNo(Identifier(element->pmtId()));
+                                PMTID.push_back(PmtNo);
+                        }
+
+                }
+
 
 		elec_charge.clear();
 		elec_time.clear();

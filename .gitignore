@@ -11,3 +11,6 @@
 *.d
 *.so
 *.pcm
+*.sub
+/.vscode
+/launch_python
