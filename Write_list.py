@@ -15,7 +15,7 @@ def main():
     version_dir = BASE_PATH / args.version
     script_dir = Path(__file__).resolve().parent
     list_dir = script_dir / "list_rtraw"
-    run_list_file = args.listfile
+    run_list_file = Path(args.listfile)
 
     # === Sanity checks ===
     if not version_dir.is_dir():
