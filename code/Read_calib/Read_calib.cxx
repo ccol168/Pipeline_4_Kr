@@ -93,7 +93,6 @@ bool Read_calib::initialize() {
 	events->Branch("OECRecoy",&OECRecoY);
 	events->Branch("OECRecoZ",&OECRecoZ);
 	events->Branch("TriggerType",&TriggerType);
-	events->Branch("TriggerTime",&TriggerTime);
 
 	runinfo = rw->bookTree(*m_par,"tree/RunInfo","Run-level informations");
 	runinfo -> Branch("LiveTime",&LiveTime);
@@ -183,7 +182,6 @@ bool Read_calib::execute() {
 		}
 
 		TriggerType = (triggerevent -> triggerType())[0];
-		TriggerTime.Set((triggerevent -> triggerTime()).GetSec(), (triggerevent -> triggerTime()).GetNanoSec()) ;
 
 		events->Fill();
 		cdEvtID++;

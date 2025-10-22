@@ -34,7 +34,7 @@ class Read_calib : public AlgBase {
 		int cdEvtID = 0;        
 		// Define variables that are globally used
 		IDService* idServ;
-		TTimeStamp timestamp, TriggerTime;
+		TTimeStamp timestamp;
 
 		TTimeStamp LastMuon;
 
