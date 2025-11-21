@@ -25,7 +25,7 @@ const int PaddedBins = 750;
 const float FindPeakThreshold = 5.;
 const int MaxBufferSize = 20;
 const float MultOverBaseline = 7.;
-const float MinPeakHeight = 100.;
+const float MinPeakHeight = 50.;
 const int MinimumDistance = 33;
 
 std::vector<int> MakeHistogram (std::vector <float> inVec) {
@@ -297,7 +297,7 @@ void execute (string filename, string treename, string outfilename) {
 	TTimeStamp FirstEvent;
 	bool LastEventWasMuon = false;
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < TotalEvents; i++) {
 
 		if (i % 100000 == 0) {
             cout << "Processing event " << i << " / " << TotalEvents << std::endl;
@@ -381,24 +381,25 @@ void execute (string filename, string treename, string outfilename) {
                 }
                                 
         	}
+
 		}
 
-		TimeStamp_out = *TimeStamp;
-		RecoX_out = OECRecoX;
-		RecoY_out = OECRecoY;
-		RecoZ_out = OECRecoZ;
-		NPE_out = NPE;
-		NHits_out = NHits;
+			TimeStamp_out = *TimeStamp;
+			RecoX_out = OECRecoX;
+			RecoY_out = OECRecoY;
+			RecoZ_out = OECRecoZ;
+			NPE_out = NPE;
+			NHits_out = NHits;
 
-		Time_out -> clear();
-		Charge_out -> clear();
-		PMTID_out -> clear();
+			Time_out -> clear();
+			Charge_out -> clear();
+			PMTID_out -> clear();
 
-		*Time_out = *Time;
-		*Charge_out = *Charge;
-		*PMTID_out = *PMTID;
-		EvtID_out++;
-		out_tree -> Fill();
+			*Time_out = *Time;
+			*Charge_out = *Charge;
+			*PMTID_out = *PMTID;
+			EvtID_out++;
+			out_tree -> Fill();
 	}
 
     fin->Close();
