@@ -118,7 +118,7 @@ bool Read_calib::execute() {
 	if (m_iEvt == 0) {
 		FirstTimeStamp = nav -> TimeStamp();
 		LastTimeStamp = nav -> TimeStamp();
-		LogDebug << "FirstTimeStamp = " << (nav->TimeStamp()).AsString() << endl;
+		LogDebug << "FirstTimeStamp = " << (nav->TimeStamp()).AsString() << std::endl;
 	}
 
 	if ( std::abs(nav -> TimeStamp().GetSec() - LastTimeStamp.GetSec()) > 30.  ) {

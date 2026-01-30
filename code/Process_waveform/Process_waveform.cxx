@@ -310,7 +310,7 @@ void execute (string filename, string treename, string outfilename) {
 
 		if (*TriggerType != "Multiplicity") continue;
 
-		if (NPE > 30000) {
+		if (NPE > 20000) {
 			if (LastEventWasMuon) {
 				LastEventWasMuon = true;
 				continue;

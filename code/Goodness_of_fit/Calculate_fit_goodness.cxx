@@ -64,10 +64,10 @@ double calculatePeakGoodness(const std::vector<float>* corrTimes,
 }
 
 
-void addPeakGoodnessScores(const char* infile, const char* outfile)
+void addPeakGoodnessScores(std::string infile, std::string outfile)
 {
     // Open input file
-    TFile* fin = TFile::Open(infile);
+    TFile* fin = TFile::Open(infile.c_str());
     if (!fin || fin->IsZombie()) {
         std::cerr << "Cannot open input file!" << std::endl;
         return;
@@ -81,14 +81,14 @@ void addPeakGoodnessScores(const char* infile, const char* outfile)
     }
     
     // Open kernel file and get kernel histogram
-    const char* kernelfile = "/storage/gpfs_data/juno/junofs/users/ccoletta/Kernel_for_Deconvolution/Kernel.root";
+    const char* kernelfile = "/storage/gpfs_data/juno/junofs/users/ccoletta/Kernel_for_Deconvolution/Kernel_Kr85_delayed.root";
     TFile* fkernel = TFile::Open(kernelfile);
     if (!fkernel || fkernel->IsZombie()) {
         std::cerr << "Cannot open kernel file!" << std::endl;
         return;
     }
     
-    TH1F* kernel = (TH1F*)fkernel->Get("histo");
+    TH1F* kernel = (TH1F*)fkernel->Get("h_ideal_delayed");
     if (!kernel) {
         std::cerr << "Kernel histogram 'histo' not found!" << std::endl;
         return;
@@ -114,7 +114,7 @@ void addPeakGoodnessScores(const char* infile, const char* outfile)
 	treeIn->SetBranchAddress("DelayedNHits",&DelayedNHits);
     
     // Create output file and clone tree structure
-    TFile* fout = TFile::Open(outfile, "RECREATE");
+    TFile* fout = TFile::Open(outfile.c_str(), "RECREATE");
     TTree* treeOut = treeIn->CloneTree(0);  // Clone structure, not entries
     
     // Add new branches for goodness scores
@@ -161,4 +161,21 @@ void addPeakGoodnessScores(const char* infile, const char* outfile)
     fkernel->Close();
     
     std::cout << "Done! Output saved to " << outfile << std::endl;
+}
+
+int main(int argc, char** argv) {
+
+    std::string macro = argv[0];
+
+    if(argc!=3) {
+            std::cout << "\n     USAGE:  "<< macro << " Input_Rootfile  Out_File_Name \n" << std::endl;
+            return 1;
+    }
+
+    std::string infilename = argv[1];
+	std::string outfilename = argv[2];
+
+	addPeakGoodnessScores(infilename,outfilename);
+
+    return 0;
 }
